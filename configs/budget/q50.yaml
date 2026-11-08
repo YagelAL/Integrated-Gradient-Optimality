@@ -1,0 +1,29 @@
+# @package _global_
+#
+# Iso-budget operating point Q = 50: recommender forward passes per
+# explanation, K = 5 (ke grid).
+#   ig     2(P+1)   -> P = 24 integration steps
+#   pls    K*EB     -> EB = 10 objective evaluations per ke
+
+budget_q: 50
+
+all_explainers:
+  ig:
+    name: ig
+    params:
+      num_steps: 24
+
+  pls:
+    name: pls
+    params:
+      selection_objective: del
+      eval_budget: 10
+      num_restarts: 2             # = max(2, EB//5)
+      temp_decay: 0.95
+      temp_init: 0.05             # SA start temperature, in objective units
+      max_forward_batch: ${max_forward_batch}
+      seed: 42
+
+explainers:
+  - ${all_explainers.ig}
+  - ${all_explainers.pls}

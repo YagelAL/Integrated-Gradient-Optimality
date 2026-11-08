@@ -1,0 +1,5 @@
+name: mlp
+family: history_vector
+hidden_dim: 256
+dropout: 0.5
+beta: 0.5           # negative-loss weight (sampled_pop_bce)

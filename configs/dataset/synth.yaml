@@ -1,0 +1,14 @@
+# Synthetic dataset with a known ground truth (scripts/make_synth_data.py).
+#
+# No timestamps: a Hydra-driven preprocess of this dataset must pass
+# filters.drop_consecutive_repeats=false (make_synth_data.py's own
+# preprocessing call already does).
+name: synth
+raw_path: ${oc.env:RAW_DATA_DIR,Data/Raw_Data}/synth.csv
+user_col: user_id
+item_col: item_id
+timestamp_col: null
+rating_col: null
+rating_threshold: null
+format: csv
+csv_sep: ","

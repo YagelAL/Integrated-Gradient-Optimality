@@ -1,0 +1,24 @@
+# @package _global_
+# Final-run config of the shipped checkpoint checkpoints/real/ml1m/final_mlp.pt.
+# Use with: scripts/train.py +final=mlp_ml1m  or  scripts/run_explainer_eval.py +final=mlp_ml1m
+defaults:
+  - override /dataset: ml1m
+  - override /recommender: mlp
+
+recommender:
+  hidden_dim: 256
+  dropout: 0.09450227352255254
+  beta: 0.5063763354588517
+
+trainer:
+  batch_size: 512
+  num_epochs: 40
+  optimizer:
+    lr: 0.0011156977081889991
+    weight_decay: 0.0001
+
+recommender_artifact:
+  local_path: checkpoints/real/ml1m/final_mlp.pt
+
+final_run: true
+wandb: null

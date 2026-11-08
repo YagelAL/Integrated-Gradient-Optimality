@@ -1,0 +1,99 @@
+# @package _global_
+#
+# Large-budget PLS searches whose per-user DEL@k_e enter the pinterest PLS-oracle floor
+# (experiments/real_data/floor_oracle.py). Values copied from each run's logged Hydra config.
+# Run one at a time: budget=pls_oracle_pinterest ++active_explainer=<alias>.
+
+all_explainers:
+  pls_oracle_del:
+    name: pls
+    alias: pls_oracle_del
+    params:
+      selection_objective: del
+      eval_budget: 15000
+      num_restarts: 3750
+      temp_decay: 0.95
+      temp_init: 0.05
+      max_forward_batch: ${max_forward_batch}
+      seed: 42
+
+  pls_oracle_del_ke:
+    name: pls
+    alias: pls_oracle_del_ke
+    params:
+      selection_objective: del_ke
+      eval_budget: 15000
+      num_restarts: 3750
+      temp_decay: 0.95
+      temp_init: 0.005
+      max_forward_batch: ${max_forward_batch}
+      seed: 42
+
+  pls_oracle_ins:
+    name: pls
+    alias: pls_oracle_ins
+    params:
+      selection_objective: ins
+      eval_budget: 15000
+      num_restarts: 3750
+      temp_decay: 0.95
+      temp_init: 0.05
+      max_forward_batch: ${max_forward_batch}
+      seed: 42
+
+  pls_oracle_retry_del_ke:
+    name: pls
+    alias: pls_oracle_retry_del_ke
+    params:
+      selection_objective: del_ke
+      eval_budget: 100000
+      num_restarts: 4000
+      temp_decay: 0.83
+      temp_init: 0.1
+      max_forward_batch: ${max_forward_batch}
+      seed: 42
+
+  pls_oracle_uniform_del:
+    name: pls
+    alias: pls_oracle_uniform_del
+    params:
+      selection_objective: del
+      eval_budget: 100000
+      num_restarts: 4000
+      temp_decay: 0.83
+      temp_init: 1.0
+      max_forward_batch: ${max_forward_batch}
+      seed: 42
+
+  pls_oracle_uniform_ins:
+    name: pls
+    alias: pls_oracle_uniform_ins
+    params:
+      selection_objective: ins
+      eval_budget: 100000
+      num_restarts: 4000
+      temp_decay: 0.83
+      temp_init: 1.0
+      max_forward_batch: ${max_forward_batch}
+      seed: 42
+
+  pls_oracle_up_del_ke:
+    name: pls
+    alias: pls_oracle_up_del_ke
+    params:
+      selection_objective: del_ke
+      eval_budget: 100000
+      num_restarts: 25000
+      temp_decay: 0.95
+      temp_init: 0.005
+      max_forward_batch: ${max_forward_batch}
+      seed: 42
+
+explainers:
+  - ${all_explainers.pls_oracle_del}
+  - ${all_explainers.pls_oracle_del_ke}
+  - ${all_explainers.pls_oracle_ins}
+  - ${all_explainers.pls_oracle_retry_del_ke}
+  - ${all_explainers.pls_oracle_uniform_del}
+  - ${all_explainers.pls_oracle_uniform_ins}
+  - ${all_explainers.pls_oracle_up_del_ke}

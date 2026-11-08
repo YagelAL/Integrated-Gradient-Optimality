@@ -1,0 +1,3 @@
+min_items_per_user: 5
+min_users_per_item: 5
+drop_consecutive_repeats: true

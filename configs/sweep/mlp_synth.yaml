@@ -1,0 +1,27 @@
+# Single-trial fixed-hyperparameter sweep for mlp on the synthetic dataset
+# (run with --count 1). hidden_dim=512 for the ~560-item catalog.
+program: scripts/train.py
+command:
+  - ${env}
+  - ${interpreter}
+  - ${program}
+  - recommender=mlp
+  - dataset=synth
+  - ${args_no_hyphens}
+method: grid
+metric:
+  name: val/hr@10
+  goal: maximize
+parameters:
+  recommender.hidden_dim:
+    value: 512
+  recommender.dropout:
+    value: 0.5
+  recommender.beta:
+    value: 0.5
+  trainer.optimizer.lr:
+    value: 0.003
+  trainer.batch_size:
+    value: 512
+  trainer.optimizer.weight_decay:
+    value: 0.00001

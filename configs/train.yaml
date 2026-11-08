@@ -1,0 +1,33 @@
+# Top-level training config (composed by scripts/train.py).
+defaults:
+  - dataset: ml1m
+  - recommender: mlp
+  - trainer: default
+  - _self_
+
+split_strategy: ${oc.env:SPLIT_STRATEGY,random_fraction}
+split_params: ${oc.env:SPLIT_PARAMS,test0.20_val0.10_seed42}
+splits_dir: ${oc.env:DATA_OUTPUT_ROOT,processed_data}/splits/${dataset.name}/${split_strategy}/${split_params}
+
+ckpt_dir: ${oc.env:DATA_OUTPUT_ROOT,processed_data}/checkpoints/${dataset.name}/${recommender.name}
+
+wandb:
+  project: xai_${recommender.name}_${dataset.name}
+  entity: ${oc.env:WANDB_ENTITY,null}
+  tags: []
+  artifact_alias: best
+
+primary_metric: hr@10
+primary_metric_goal: maximize
+
+# Final-run mode: train on train+val combined, eval on test, disable early
+# stopping, tag the W&B run as ``final_optimized``. Set by run_sweep.py
+# after a sweep completes.
+final_run: false
+final_run_tag: final_optimized
+
+hydra:
+  job:
+    chdir: false
+  run:
+    dir: ${ckpt_dir}/.hydra/${now:%Y-%m-%d_%H-%M-%S}

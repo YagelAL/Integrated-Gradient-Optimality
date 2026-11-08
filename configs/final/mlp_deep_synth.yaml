@@ -1,0 +1,24 @@
+# @package _global_
+# Final-run config of the shipped checkpoint checkpoints/synthetic/mlp_deep/final_mlp_deep.pt.
+# Use with: scripts/train.py +final=mlp_deep_synth  or  scripts/run_explainer_eval.py +final=mlp_deep_synth
+defaults:
+  - override /dataset: synth
+  - override /recommender: mlp_deep
+
+recommender:
+  hidden_dim: 256
+  dropout: 0.1
+  beta: 0.5
+
+trainer:
+  batch_size: 512
+  num_epochs: 40
+  optimizer:
+    lr: 0.0001
+    weight_decay: 1.0e-05
+
+recommender_artifact:
+  local_path: checkpoints/synthetic/mlp_deep/final_mlp_deep.pt
+
+final_run: true
+wandb: null

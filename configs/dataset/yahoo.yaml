@@ -1,0 +1,11 @@
+# Yahoo! Music subset. Keeps interactions with rating >= 70 (0-100 scale).
+# No timestamps.
+name: yahoo
+raw_path: ${oc.env:RAW_DATA_DIR,Data/Raw_Data}/Yahoo_ratings.csv
+user_col: user_id
+item_col: song_id
+timestamp_col: null
+rating_col: rating
+rating_threshold: 70.0
+format: csv
+csv_sep: ","

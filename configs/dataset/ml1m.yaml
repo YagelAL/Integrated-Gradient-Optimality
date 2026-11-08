@@ -1,0 +1,10 @@
+# MovieLens-1M.
+name: ml1m
+raw_path: ${oc.env:RAW_DATA_DIR,Data/Raw_Data}/Movielens-1m.csv
+user_col: user_id
+item_col: item_id
+timestamp_col: timestamp
+rating_col: ratings
+rating_threshold: null
+format: csv
+csv_sep: ","

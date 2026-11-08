@@ -1,0 +1,31 @@
+# W&B Bayesian sweep for mlp on real data (selection on val/hr@10).
+program: scripts/train.py
+command:
+  - ${env}
+  - ${interpreter}
+  - ${program}
+  - recommender=mlp
+  - ${args_no_hyphens}
+method: bayes
+metric:
+  name: val/hr@10
+  goal: maximize
+parameters:
+  recommender.hidden_dim:
+    values: [32, 64, 256, 512]
+  trainer.optimizer.lr:
+    distribution: log_uniform_values
+    min: 0.001
+    max: 0.01
+  recommender.beta:
+    distribution: uniform
+    min: 0.0
+    max: 4.0
+  trainer.batch_size:
+    values: [256, 512, 1024]
+  recommender.dropout:
+    distribution: uniform
+    min: 0.0
+    max: 0.3
+  trainer.optimizer.weight_decay:
+    values: [0.0, 0.00001, 0.0001]

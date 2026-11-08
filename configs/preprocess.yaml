@@ -1,0 +1,14 @@
+# Top-level preprocessing config (composed by scripts/preprocess.py).
+defaults:
+  - dataset: ml1m
+  - split: random_fraction
+  - filters: default
+  - _self_
+
+output_root: ${oc.env:DATA_OUTPUT_ROOT,processed_data}
+
+hydra:
+  job:
+    chdir: false
+  run:
+    dir: ${output_root}/.hydra/${now:%Y-%m-%d_%H-%M-%S}_${dataset.name}_${split.strategy}

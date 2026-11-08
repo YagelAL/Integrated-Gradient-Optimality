@@ -1,0 +1,18 @@
+# Default fidelity-evaluation grid: DEL@Ke (truncate), INS@Ke (retain).
+metrics:
+  - name: del_ke
+    params: {}
+  - name: ins_ke
+    params: {}
+ke_grid: [1,2,3,4,5]
+kr_grid: [1,5,10, 20]
+# Which model recommendations to explain. 0 = top-1.
+item_ranks: [0,1,2]
+
+# Monotonic correction (cummin/cummax over ke per user, per metric's
+# monotonic_reduction) is the headline; the raw mean is logged alongside
+# under `<key>_raw`. Set to false to report only the raw mean.
+monotonic: true
+
+# Per-user results CSV under hydra.run.dir/details/.
+save_artifacts: false

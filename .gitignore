@@ -1,0 +1,14 @@
+data/
+Data/
+processed_data/
+logs/
+outputs/
+wandb/
+__pycache__/
+*.pyc
+.DS_Store
+
+# run outputs (keep the paper result tables)
+results/*
+!results/real_data/
+!results/synthetic/

@@ -1,0 +1,24 @@
+# @package _global_
+# Final-run config of the shipped checkpoint checkpoints/real/yahoo/final_mlp.pt.
+# Use with: scripts/train.py +final=mlp_yahoo  or  scripts/run_explainer_eval.py +final=mlp_yahoo
+defaults:
+  - override /dataset: yahoo
+  - override /recommender: mlp
+
+recommender:
+  hidden_dim: 32
+  dropout: 0.036378212935936294
+  beta: 0.7876030018415587
+
+trainer:
+  batch_size: 1024
+  num_epochs: 39
+  optimizer:
+    lr: 0.0013006132570074162
+    weight_decay: 0.0001
+
+recommender_artifact:
+  local_path: checkpoints/real/yahoo/final_mlp.pt
+
+final_run: true
+wandb: null

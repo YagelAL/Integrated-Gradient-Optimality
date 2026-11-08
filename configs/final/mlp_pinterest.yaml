@@ -1,0 +1,24 @@
+# @package _global_
+# Final-run config of the shipped checkpoint checkpoints/real/pinterest/final_mlp.pt.
+# Use with: scripts/train.py +final=mlp_pinterest  or  scripts/run_explainer_eval.py +final=mlp_pinterest
+defaults:
+  - override /dataset: pinterest
+  - override /recommender: mlp
+
+recommender:
+  hidden_dim: 512
+  dropout: 0.19046556035612397
+  beta: 0.9316757963362136
+
+trainer:
+  batch_size: 1024
+  num_epochs: 20
+  optimizer:
+    lr: 0.0010100732126161736
+    weight_decay: 0.0001
+
+recommender_artifact:
+  local_path: checkpoints/real/pinterest/final_mlp.pt
+
+final_run: true
+wandb: null

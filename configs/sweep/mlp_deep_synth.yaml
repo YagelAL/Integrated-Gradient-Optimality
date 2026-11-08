@@ -1,0 +1,30 @@
+# Small grid for mlp_deep on the synthetic dataset (lr x dropout).
+program: scripts/train.py
+command:
+  - ${env}
+  - ${interpreter}
+  - ${program}
+  - recommender=mlp_deep
+  - dataset=synth
+  - ${args_no_hyphens}
+method: grid
+metric:
+  name: val/hr@10
+  goal: maximize
+parameters:
+  recommender.hidden_dim:
+    value: 256
+  recommender.dropout:
+    values: [0.1, 0.3]
+  recommender.beta:
+    value: 0.5
+  trainer.optimizer.lr:
+    values: [0.0001, 0.0003, 0.001]
+  trainer.batch_size:
+    value: 512
+  trainer.optimizer.weight_decay:
+    value: 0.00001
+  trainer.early_stopping_min_epochs:
+    value: 5
+  trainer.early_stopping_patience:
+    value: 4

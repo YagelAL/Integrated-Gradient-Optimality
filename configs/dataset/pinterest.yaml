@@ -1,0 +1,10 @@
+# Pinterest subset. Implicit feedback only: no rating, no timestamp.
+name: pinterest
+raw_path: ${oc.env:RAW_DATA_DIR,Data/Raw_Data}/pinterest_data.csv
+user_col: user_id
+item_col: item_id
+timestamp_col: null
+rating_col: null
+rating_threshold: null
+format: csv
+csv_sep: ","

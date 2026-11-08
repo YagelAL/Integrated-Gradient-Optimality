@@ -1,0 +1,44 @@
+# Top-level explainer-eval config (composed by scripts/run_explainer_eval.py).
+#
+# Explainer params live in configs/budget/<q>.yaml (`@package _global_`).
+# `budget` is mandatory; the body must not declare `explainers:`, because
+# `_self_` composes last and would replace the budget catalog.
+defaults:
+  - dataset: ml1m
+  - recommender: mlp
+  - fidelity: default
+  - budget: ???          # MANDATORY — pass budget=q50 / q1000 / pls_oracle_<dataset>
+  - _self_
+
+# Evaluation runs on the random_fraction split the checkpoint was trained on.
+split_strategy: random_fraction
+split_params: test0.20_val0.10_seed42
+splits_dir: ${oc.env:DATA_OUTPUT_ROOT,processed_data}/splits/${dataset.name}/${split_strategy}/${split_params}
+
+# null = run the full budget catalog. Otherwise a comma-separated list of
+# all_explainers keys (aliases included, e.g. "ig,pls_del_ke").
+active_explainer: null
+
+# PLS forward-pass chunk size, interpolated by configs/budget/*.yaml.
+max_forward_batch: 512
+
+# Recommender artifact source. Set wandb_path OR local_path (one is required).
+# +final=<name> sets local_path to the shipped checkpoint.
+recommender_artifact:
+  wandb_path: null
+  local_path: null
+
+# DataLoader knobs for the test set.
+eval:
+  batch_size: 256
+  num_workers: 3
+
+# W&B logging of the fidelity scalars (off; needs `pip install wandb`).
+wandb: null
+
+hydra:
+  job:
+    chdir: false
+  run:
+    # Override per run with hydra.run.dir=<dir>.
+    dir: ${oc.env:EVAL_OUT_ROOT,results}/.hydra/${dataset.name}/${recommender.name}/${now:%Y-%m-%d_%H-%M-%S}
