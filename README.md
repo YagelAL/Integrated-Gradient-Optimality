@@ -10,7 +10,7 @@ paper's two experiments.
 |---|---|
 | `src/` | Framework: preprocessing, datasets, recommenders (`mlp`, `mlp_deep`), explainers (`ig`, `pls`), fidelity metrics (`del_ke`, `ins_ke`) and evaluator |
 | `configs/` | Hydra configs: `dataset/`, `split/`, `filters/`, `recommender/`, `sweep/` (training sweeps), `budget/` (explainer catalogs), `fidelity/`, `final/` (one per shipped checkpoint) |
-| `scripts/` | Python entry points (`preprocess.py`, `run_sweep.py`, `train.py`, `run_explainer_eval.py`, `make_synth_data.py`, `synth_gt_audit.py`) |
+| `scripts/` | Python entry points (`preprocess.py`, `run_sweep.py`, `train.py`, `run_explainer_eval.py`, `make_synth_data.py`, `synth_gt_audit.py`, `reproduce.py`) |
 | `checkpoints/` | The five trained recommenders used in the short paper |
 | `experiments/synthetic/` | Table scripts for Experiment 1 |
 | `experiments/real_data/` | `floor_oracle.py`: oracle-like row of the real-data table |
@@ -54,6 +54,17 @@ mkdir -p Data/Raw_Data
 Expected md5 of the converted files: `Movielens-1m.csv` `f69dc26c5a6ad65b5fa43b4609198032`,
 `pinterest_data.csv` `b87841faf5ae5e7eebeecf7aa1dd1b45`, `Yahoo_ratings.csv`
 `800385426fc7c8b1a00daa5f2b858971`.
+
+## Quick start
+
+After setup and placing the dataset CSVs (above), one command runs both experiments and prints Table 1
+and Table 2 (about 1 hour on 4 CPUs; no GPU needed):
+
+```bash
+python scripts/reproduce.py              # --table 1 or --table 2 for one table; --train to also retrain
+```
+
+It runs the commands of the two experiment sections below, in order.
 
 ## Checkpoints
 
