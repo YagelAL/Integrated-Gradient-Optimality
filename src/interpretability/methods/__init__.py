@@ -6,3 +6,4 @@ from src.interpretability.methods import ig  # noqa: F401
 from src.interpretability.methods import pls  # noqa: F401
 
 __all__: list[str] = []
+from src.interpretability.methods import spinrec  # noqa: F401

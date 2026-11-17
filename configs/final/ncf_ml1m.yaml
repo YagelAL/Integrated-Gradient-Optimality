@@ -1,0 +1,28 @@
+# @package _global_
+# Final-run config of the shipped checkpoint checkpoints/real/ml1m/final_ncf.pt.
+# Use with: scripts/train.py +final=ncf_ml1m  or  scripts/run_explainer_eval.py +final=ncf_ml1m
+defaults:
+  - override /dataset: ml1m
+  - override /recommender: ncf
+
+recommender:
+  hidden_dim: 256
+  dropout: 0.4615003735247368
+  beta: 0.5
+
+trainer:
+  batch_size: 256
+  num_epochs: 50
+  optimizer:
+    lr: 0.001611661089153644
+    weight_decay: 0.0017552467600374729
+
+recommender_artifact:
+  local_path: checkpoints/real/ml1m/final_ncf.pt
+
+# NCF scores the whole catalog per user: memory O(B * V * M). The Table 4 values were produced with batch size 16.
+eval:
+  batch_size: 16
+
+final_run: true
+wandb: null

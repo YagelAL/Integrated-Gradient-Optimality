@@ -1,0 +1,6 @@
+# NCF with the MLP branch removed: GMF only, affine in the history.
+name: ncf_gmf
+family: history_vector
+hidden_dim: 32      # factor_num
+dropout: 0.0        # unused: no MLP tower to regularize
+beta: 0.5           # negative-loss weight (sampled_pop_mse)

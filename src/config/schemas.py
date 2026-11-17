@@ -92,7 +92,7 @@ class RecommenderCfg(BaseModel):
     """Architecture-level recommender config."""
 
     model_config = ConfigDict(extra="forbid", frozen=True)
-    name: Literal["mlp", "mlp_deep"]
+    name: Literal["mlp", "mlp_deep", "ncf", "ncf_gmf"]
     family: Family
     hidden_dim: Annotated[int, Field(ge=8)]
     dropout: Annotated[float, Field(ge=0.0, le=1.0)] = 0.2

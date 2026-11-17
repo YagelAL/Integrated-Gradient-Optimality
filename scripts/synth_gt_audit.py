@@ -41,13 +41,15 @@ from hydra.core.hydra_config import HydraConfig  # noqa: E402
 from omegaconf import DictConfig, OmegaConf  # noqa: E402
 
 import src.interpretability  # noqa: E402  (registers explainers + metrics)
-import src.recommenders  # noqa: E402  (registers recommender classes, incl. mlp_deep)
+import src.recommenders  # noqa: E402  (registers recommender classes, incl. mlp_deep, ncf, ncf_gmf)
 from scripts._audit_setup import load_model_and_context  # noqa: E402
+from scripts._audit_values import original_probability, set_probability  # noqa: E402
 from src.capabilities import Family  # noqa: E402
 from src.datasets.history_vector import PAD_IDX  # noqa: E402
 from src.interpretability.fidelity.perturbations import Perturbation  # noqa: E402
 from src.interpretability.inputs import ExplainInput  # noqa: E402
 from src.interpretability.registry import build_explainer  # noqa: E402
+from src.interpretability.selection import CandidateAuditor, build_selection_objective  # noqa: E402
 from src.trainers.dataloaders import build_dataloader  # noqa: E402
 
 assert src.interpretability and src.recommenders
@@ -177,11 +179,14 @@ def main(cfg: DictConfig) -> None:
         "user_id", "target_item", "hist_len", "g_size", "gt5_items", "gt5_weights",
         "explainer", "ke", "precision", "recall", "jaccard", "exact_hit",
         "precision_model", "pls_selection_objective",
+        "p_sel", "p_pls", "p_closed", "p_orig",
     ]
     # Record which selection_objective `pls` ran with, so each CSV is self-describing.
     pls_selection_objective = (
         all_expl.get("pls", {}).get("params", {}).get("selection_objective", "") if "pls" in explainers else ""
     )
+
+    auditor = CandidateAuditor(model, build_selection_objective(pls_selection_objective)) if pls_selection_objective in ("del_ke", "ins_ke") else None
 
     # Per-(explainer, ke) accumulators for the headline (|G|>=5) subset.
     headline = defaultdict(lambda: defaultdict(list))  # explainer -> ke -> [precision,...]
@@ -228,6 +233,7 @@ def main(cfg: DictConfig) -> None:
                     user_ids=inp.user_ids[b : b + 1], history=row_hist,
                 )
                 explainable = row_hist.bool()
+                p_orig = original_probability(model, orig_scores[b : b + 1], target)
 
                 if "ig" in explainers:
                     attrs0 = explainers["ig"].explain(row_inp, ke=1)
@@ -251,17 +257,21 @@ def main(cfg: DictConfig) -> None:
                         selected[expl_name] = set(mask[0].nonzero(as_tuple=False).squeeze(-1).tolist())
 
                     oracle_set = selected.get("pls")
+                    p_pls = set_probability(auditor, row_inp, oracle_set, ke) if auditor and oracle_set else ""
 
                     for expl_name, s_ke in selected.items():
                         precision, recall, jaccard, exact_hit = _set_metrics(s_ke, gt_ke, ke)
 
                         precision_model = ""
+                        p_closed = ""
                         if recommender_cfg.name == "mlp":
                             eff = _mlp_effective_weight(model, target)
                             present = [(j, eff[j]) for j in hist_items]
                             present.sort(key=lambda kv: -kv[1])
                             gt_model_ke = {j for j, _ in present[:ke]}
                             precision_model, *_ = _set_metrics(s_ke, gt_model_ke, ke)
+                            if auditor and expl_name == "pls":
+                                p_closed = set_probability(auditor, row_inp, gt_model_ke, ke)
                         elif oracle_set is not None:
                             precision_model, *_ = _set_metrics(s_ke, oracle_set, ke)
 
@@ -276,6 +286,8 @@ def main(cfg: DictConfig) -> None:
                             "precision": precision, "recall": recall, "jaccard": jaccard, "exact_hit": exact_hit,
                             "precision_model": precision_model,
                             "pls_selection_objective": pls_selection_objective,
+                            "p_sel": set_probability(auditor, row_inp, s_ke, ke) if auditor else "",
+                            "p_pls": p_pls, "p_closed": p_closed, "p_orig": p_orig,
                         })
 
             if max_users is not None and n_users_total >= int(max_users):

@@ -1,0 +1,28 @@
+# @package _global_
+# Final-run config of the shipped checkpoint checkpoints/real/yahoo/final_ncf.pt.
+# Use with: scripts/train.py +final=ncf_yahoo  or  scripts/run_explainer_eval.py +final=ncf_yahoo
+defaults:
+  - override /dataset: yahoo
+  - override /recommender: ncf
+
+recommender:
+  hidden_dim: 32
+  dropout: 0.32962953881582435
+  beta: 0.5
+
+trainer:
+  batch_size: 128
+  num_epochs: 50
+  optimizer:
+    lr: 0.00032959706053195824
+    weight_decay: 7.269292942587967e-06
+
+recommender_artifact:
+  local_path: checkpoints/real/yahoo/final_ncf.pt
+
+# NCF scores the whole catalog per user: memory O(B * V * M). The Table 4 values were produced with batch size 16.
+eval:
+  batch_size: 16
+
+final_run: true
+wandb: null

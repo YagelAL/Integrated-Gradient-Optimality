@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import replace as dc_replace
-from typing import ClassVar
+from typing import ClassVar, List
 
 import torch
 
@@ -236,6 +236,31 @@ class CandidateAuditor:
         dtype = torch.float32 if scores.device.type == "mps" else torch.float64
         ranks = (scores > target_scores).sum(dim=1).to(dtype) + 1.0
         return 1.0 / torch.log2(ranks + 1.0)
+
+    @torch.no_grad()
+    def select(
+        self, inp: ExplainInput, candidates: List[torch.Tensor], ke: int
+    ) -> torch.Tensor:
+        """Per-user best candidate under the objective (first wins ties).
+
+        Returns:
+            The winning importance tensor, same shape as each candidate.
+        """
+        if len(candidates) == 1:
+            return candidates[0]
+        first = candidates[0]
+        dtype = torch.float32 if first.device.type == "mps" else torch.float64
+        best_val = torch.full(
+            (inp.batch_size,), float("-inf"), dtype=dtype, device=first.device
+        )
+        best = first
+        for cand in candidates:
+            ct, cr = self.cdcg_probes(inp, cand, ke)
+            val = self.objective.score(ct, cr).to(device=best_val.device, dtype=dtype)
+            better = val > best_val
+            best_val = torch.where(better, val, best_val)
+            best = torch.where(better.unsqueeze(1).expand_as(cand), cand, best)
+        return best
 
 
 __all__ = [

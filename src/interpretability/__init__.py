@@ -10,7 +10,7 @@ from src.interpretability.registry import (
 )
 
 
-# Importing ``methods`` registers the ``ig`` and ``pls`` explainers.
+# Importing ``methods`` registers the ``ig``, ``pls`` and ``spinrec`` explainers.
 from src.interpretability import methods  # noqa: F401
 
 __all__ = [

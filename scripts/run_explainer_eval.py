@@ -133,9 +133,26 @@ def main(cfg: DictConfig) -> None:
             raise ValueError(f"active_explainer lists the same entry more than once: {dup}")
         container["explainers"] = [container["all_explainers"][n] for n in names]
 
+    # spinrec samples its baselines from the training split, which the Hydra
+    # config cannot express (not YAML-serializable): build the loader once, only
+    # if needed, and inject it as "data_loader".
+    train_loader = None
+    if any(e["name"] == "spinrec" for e in container["explainers"]):
+        train_loader = build_dataloader(
+            splits_dir / "train.csv",
+            num_items=num_items,
+            batch_size=int(container["eval"]["batch_size"]),
+            num_workers=int(container["eval"]["num_workers"]),
+            phase="train",
+            distributed=False,
+            warm_items=warm_items,
+        )
+
     explainers = []
     for entry in container["explainers"]:
         params = dict(entry.get("params", {}))
+        if entry["name"] == "spinrec" and params.get("data_loader") is None:
+            params["data_loader"] = train_loader
         explainer = build_explainer(entry["name"], model, params=params, device=device)
         # Optional display alias: lets one registry method appear several times
         # in a run (e.g. pls under different selection objectives). All

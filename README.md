@@ -8,13 +8,13 @@ paper's two experiments.
 
 | Path | What it holds |
 |---|---|
-| `src/` | Framework: preprocessing, datasets, recommenders (`mlp`, `mlp_deep`), explainers (`ig`, `pls`), fidelity metrics (`del_ke`, `ins_ke`) and evaluator |
+| `src/` | Framework: preprocessing, datasets, recommenders (`mlp`, `mlp_deep`, `ncf`, `ncf_gmf`), explainers (`ig`, `pls`, `spinrec`), fidelity metrics (`del_ke`, `ins_ke`) and evaluator |
 | `configs/` | Hydra configs: `dataset/`, `split/`, `filters/`, `recommender/`, `sweep/` (training sweeps), `budget/` (explainer catalogs), `fidelity/`, `final/` (one per shipped checkpoint) |
 | `scripts/` | Python entry points (`preprocess.py`, `run_sweep.py`, `train.py`, `run_explainer_eval.py`, `make_synth_data.py`, `synth_gt_audit.py`, `reproduce.py`) |
-| `checkpoints/` | The five trained recommenders used in the short paper |
+| `checkpoints/` | The ten trained recommenders used in the short paper |
 | `experiments/synthetic/` | Table scripts for Experiment 1 |
-| `experiments/real_data/` | `floor_oracle.py`: oracle-like row of the real-data table |
-| `results/` | The short paper's table values as CSV, and the per-user DEL@k_e values the oracle-like reference is computed from |
+| `experiments/real_data/` | `floor_oracle.py`: oracle-like (`mlp`) and best-observed (`ncf`) row of the real-data tables |
+| `results/` | The short paper's table values as CSV, and the per-user DEL@k_e values the oracle-like and best-observed references are computed from |
 
 ## Setup
 
@@ -26,9 +26,10 @@ pip install -r requirements.txt
 
 `pip install wandb` is only needed for training sweeps (`scripts/run_sweep.py`).
 
-Table 2 depends on which test item is held out, which depends on `eval.batch_size=256`,
+Tables 3 and 4 depend on which test item is held out, which depends on `eval.batch_size`,
 `eval.num_workers=3` and a single process (the held-out item is drawn with a per-dataloader-worker
-RNG). Keep these defaults (`configs/explainer_eval.yaml`) and run with `python`, not `torchrun`.
+RNG). Keep the defaults (`configs/explainer_eval.yaml`: batch size 256 for Table 3; the `ncf_*` real-data
+configs set batch size 16 for Table 4) and run with `python`, not `torchrun`.
 
 ## Datasets
 
@@ -57,14 +58,18 @@ Expected md5 of the converted files: `Movielens-1m.csv` `f69dc26c5a6ad65b5fa43b4
 
 ## Quick start
 
-After setup and placing the dataset CSVs (above), one command runs both experiments and prints Table 1
-and Table 2 (about 1 hour on 4 CPUs; no GPU needed):
+After setup and placing the dataset CSVs (above), one command runs both experiments for `mlp` and `mlp_deep` and
+prints Tables 1, 2 and 3 (CPU only; the IG-only version took about 1 hour on 4 CPUs, the SpinRec runs of Table 3 were not
+re-timed):
 
 ```bash
-python scripts/reproduce.py              # --table 1 or --table 2 for one table; --train to also retrain
+python scripts/reproduce.py              # --table 1 (synthetic: Tables 1 and 2) or --table 2 (real data: Table 3); --train to also retrain
+python scripts/reproduce.py --ncf        # add the synthetic ncf_gmf and ncf audits to Tables 1 and 2 (CUDA recommended)
+python scripts/reproduce.py --table none --real-ncf   # only the real-data NCF run of Table 4 (CUDA recommended)
 ```
 
-It runs the commands of the two experiment sections below, in order.
+It runs the commands of the two experiment sections below, in order. The NCF runs warn when no CUDA device is found
+(they take hours on CPU).
 
 ## Checkpoints
 
@@ -75,10 +80,17 @@ It runs the commands of the two experiment sections below, in order.
 | `checkpoints/real/yahoo/final_mlp.pt` | `f6a28bd53b0dc96c24a1e355ece8a371` | `+final=mlp_yahoo` |
 | `checkpoints/synthetic/mlp/final_mlp.pt` | `1e9b0283ec0967675d5a6062e6e5cabd` | `+final=mlp_synth` |
 | `checkpoints/synthetic/mlp_deep/final_mlp_deep.pt` | `6998ca1babc457b4ea5e2954e33a1345` | `+final=mlp_deep_synth` |
+| `checkpoints/real/ml1m/final_ncf.pt` | `ec1ffee7d01f4207c16697498f3598a3` | `+final=ncf_ml1m` |
+| `checkpoints/real/pinterest/final_ncf.pt` | `c93115881e65f4e95649a77b8f469ae9` | `+final=ncf_pinterest` |
+| `checkpoints/real/yahoo/final_ncf.pt` | `d63ca10af89e6319cdccfb5bee1d23e8` | `+final=ncf_yahoo` |
+| `checkpoints/synthetic/ncf/final_ncf.pt` | `117e0d5a2cd126d08ff5695fb87ef757` | `+final=ncf_synth` |
+| `checkpoints/synthetic/ncf_gmf/final_ncf_gmf.pt` | `9b3991b74ba07aa016921707369f36e8` | `+final=ncf_gmf_synth` |
 
 `configs/final/<name>.yaml` sets the dataset, recommender architecture, checkpoint path and the
 training hyperparameters of the final run. Pass `+final=<name>` to `scripts/run_explainer_eval.py`,
-`scripts/synth_gt_audit.py` or `scripts/train.py`.
+`scripts/synth_gt_audit.py` or `scripts/train.py`. Retraining with `train.py` does not reproduce a checkpoint bit for bit
+(this holds for every model, and the real-data `ncf` checkpoints come from an earlier version of the trainer); evaluate the
+shipped checkpoints.
 
 ## Experiment 1: synthetic data (exact optimum by exhaustive search)
 
@@ -94,9 +106,11 @@ python scripts/make_synth_data.py --seed 0
 # 2. train (optional; the checkpoints ship)
 python scripts/train.py +final=mlp_synth
 python scripts/train.py +final=mlp_deep_synth
+python scripts/train.py +final=ncf_synth
+python scripts/train.py +final=ncf_gmf_synth
 
-# 3. oracle check: ig and exact pls in one pass
-for M in mlp mlp_deep; do
+# 3. oracle check: ig and exact pls in one pass (the ncf and ncf_gmf audits are slow: use a GPU, about 10-17 minutes each)
+for M in mlp mlp_deep ncf_gmf ncf; do
   for OBJ in del_ke ins_ke; do
     python scripts/synth_gt_audit.py +final=${M}_synth budget=q50 \
         hydra.run.dir=results/runs/synth/$M/${OBJ}_oracle \
@@ -109,19 +123,30 @@ for M in mlp mlp_deep; do
 done
 
 # 4. Table 1
-python experiments/synthetic/synth_match_table.py results/runs/synth/{mlp,mlp_deep}/{del_ke,ins_ke}_oracle
+python experiments/synthetic/synth_match_table.py results/runs/synth/{mlp,mlp_deep,ncf_gmf,ncf}/{del_ke,ins_ke}_oracle
+
+# 5. Table 2: regret of IG's set vs the exhaustive optimum
+python experiments/synthetic/synth_regret_table.py results/runs/synth/{mlp,mlp_deep,ncf_gmf,ncf}/{del_ke,ins_ke}_oracle
 ```
 
-`synth_match_table.py` prints, per explainer and k, the mean `precision_model` x 100: the overlap
-of the explainer's top-k set with the model's optimal k-subset (for `mlp`, the top-k of its
-closed-form effective item weights; for `mlp_deep`, the exact pls set from the same pass). The
-`ig` rows are Table 1. The short paper's "99.6–100% exhaustive vs closed form" is the `pls` row of
+`synth_match_table.py` prints, per explainer and k, the mean item-level overlap x 100 of the
+explainer's top-k set with the model's optimal k-subset (`precision_model`: for `mlp`, the top-k of its
+closed-form effective item weights; for `mlp_deep`, `ncf` and `ncf_gmf`, which have no closed form, the exact pls set from the
+same pass). A user whose set reaches the exhaustive optimum's objective value (within 1e-6) counts as full agreement, since
+distinct sets can tie (not applied to the `pls` rows). The `ig` rows are Table 1 and are written to `results/synthetic/ig_overlap.csv`.
+Ties depend on float32 arithmetic, so another GPU or a CPU can move an entry in the last digit. The short paper's "99.6–100% exhaustive vs closed form" is the `pls` row of
 the `mlp` tables.
+
+`synth_regret_table.py` prints the value regret of IG's set against the exhaustive optimum (DEL@k_e: `p(IG set) - p(optimal set)`;
+INS@k_e: the reverse; relative to the unperturbed probability; per k_e, no cummin) as mean, median, max, % of users with
+regret <= 1e-6 and a 95% percentile-bootstrap CI over users, with n. On `mlp` it also prints the objective gap between the
+exhaustive and the closed-form sets. It writes `results/synthetic/ig_regret.csv`; `python scripts/reproduce.py --table 1` produces it (add `--ncf` for the `ncf` and `ncf_gmf` rows). Both table scripts rewrite their CSV from the run directories they are given.
 
 ## Experiment 2: real data (ML1M, Pinterest, Yahoo! Music)
 
 5-core filtering, user-level `random_fraction` split (test 0.2, validation 0.1, seed 42). Yahoo!
-Music keeps ratings >= 70. Recommender: `mlp`. IG vs the oracle-like reference, DEL@k_e, rank 0, k_e = 1..5.
+Music keeps ratings >= 70. Recommenders: `mlp` (Table 3) and `ncf` (Table 4). IG, SpinRec (`spinrec_del_ke`: SpinRec whose
+candidate selection optimizes DEL@k_e, 89 sampled baselines, 2 integration steps, seed 42) and the best-observed reference, DEL@k_e, rank 0, k_e = 1..5.
 
 ```bash
 # 1. preprocess
@@ -135,29 +160,50 @@ python scripts/preprocess.py dataset=yahoo split=random_fraction filters.drop_co
 #    recommender_artifact.local_path=processed_data/checkpoints/$D/mlp/final_mlp.pt
 for D in ml1m pinterest yahoo; do python scripts/train.py +final=mlp_$D; done
 
-# 3. IG row of Table 2 (prints the del_ke rank-0 means)
+# 3. IG and SpinRec rows of Table 3 (prints the del_ke rank-0 means)
 for D in ml1m pinterest yahoo; do
-  python scripts/run_explainer_eval.py +final=mlp_$D budget=q1000 ++active_explainer=ig \
+  python scripts/run_explainer_eval.py +final=mlp_$D budget=q1000 "++active_explainer='ig,spinrec_del_ke'" \
       "fidelity.item_ranks=[0]" hydra.run.dir=results/runs/mlp_$D/q1000
 done
 
-# 4. Oracle-like row of Table 2
+# 4. Oracle-like row of Table 3
 python experiments/real_data/floor_oracle.py
+
+# 5. PLS-only reference (the same floor without the IG runs)
+python experiments/real_data/floor_oracle.py --exclude-ig
 ```
 
 The final hyperparameters came from the Bayesian sweep in `configs/sweep/mlp.yaml`
 (`scripts/run_sweep.py`, needs `wandb`).
 
+**NCF (Table 4).** Same preprocessing; the `ncf_<dataset>` configs set `eval.batch_size=16` (NCF scores the whole catalog per
+user, memory grows with batch size; the Table 4 values were produced with 16). Use a GPU on a single process: about 3.5 hours
+for ML1M, 2 hours for Pinterest and 25 minutes for Yahoo on a V100 (measured for a run with one more explainer than below).
+
+```bash
+for D in ml1m pinterest yahoo; do
+  python scripts/run_explainer_eval.py +final=ncf_$D budget=q1000 "++active_explainer='ig,spinrec_del_ke'" \
+      "fidelity.item_ranks=[0]" hydra.run.dir=results/runs/ncf_$D/q1000
+done
+python experiments/real_data/floor_oracle.py --model=ncf     # best-observed row of Table 4
+```
+
+The best-observed reference for NCF is the per-user best DEL@k_e over IG, SpinRec and PLS runs with larger budgets. It is
+not recomputed by the commands above: `results/real_data/per_user/<dataset>_ncf_del_ke_rank0.csv.gz` holds the per-user values of those runs
+(`ig` and `spinrec_del_ke` are the runs above; the other series, `pls_run01`, ..., are the PLS runs), and `floor_oracle.py --model=ncf` takes their per-user minimum.
+
 The oracle-like reference is a per-user floor: for each user, the best DEL@k_e over IG and the large-budget PLS
 searches. `results/real_data/per_user/` holds those per-user values (one series per run, named by its
-alias in `configs/budget/pls_oracle_<dataset>.yaml`); `floor_oracle.py` computes the floor from them.
+alias in `configs/budget/pls_oracle_<dataset>.yaml`); `floor_oracle.py` computes the floor from them. The default floor includes IG, so it is at most IG's value by construction; `--exclude-ig` gives the best of the PLS searches alone. Test users per dataset: 1,208 / 3,831 / 2,440.
 
 ## Short paper tables
 
 | Table | Script | Values |
 |---|---|---|
 | 1. Synthetic: % overlap of IG with the exact optimum | `synth_gt_audit.py`, then `synth_match_table.py` | `results/synthetic/ig_overlap.csv` |
-| 2. Real data: DEL@k_e, IG vs oracle-like | `run_explainer_eval.py` (IG), `floor_oracle.py` (oracle-like) | `results/real_data/del_ke_mlp_rank0.csv` |
+| 2. Synthetic: regret of IG's set against the exact optimum | `synth_gt_audit.py`, then `synth_regret_table.py` | `results/synthetic/ig_regret.csv` |
+| 3. Real data, affine MLP: DEL@k_e, IG and SpinRec vs oracle-like | `run_explainer_eval.py` (IG, SpinRec), `floor_oracle.py` (oracle-like) | `results/real_data/del_ke_mlp_rank0.csv` |
+| 4. Real data, NCF: DEL@k_e, IG and SpinRec (DEL@k_e) vs best-observed | `run_explainer_eval.py` (IG, SpinRec), `floor_oracle.py --model=ncf` (best-observed) | `results/real_data/del_ke_ncf_rank0.csv` |
 
 ## License
 

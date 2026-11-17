@@ -4,6 +4,7 @@
 # explanation, K = 5 (ke grid).
 #   ig     2(P+1)   -> P = 499 integration steps
 #   pls    K*EB     -> EB = 200 objective evaluations per ke
+#   spinrec_del_ke (Nb+1)*2(P+1) + K*(Nb+2) <= Q -> Nb = 89 sampled baselines, P = 2 steps
 
 budget_q: 1000
 
@@ -23,6 +24,17 @@ all_explainers:
       temp_init: 0.05             # SA start temperature, in objective units
       max_forward_batch: ${max_forward_batch}
       seed: 42
+
+  spinrec_del_ke:
+    name: spinrec
+    alias: spinrec_del_ke
+    params:
+      method: sample_random_user
+      seed: 42
+      num_baseline_samples: 89
+      num_steps: 2
+      baseline_pool_size: 96      # whole batches are drawn: pool >= num_baseline_samples
+      selection_objective: del_ke
 
 explainers:
   - ${all_explainers.ig}

@@ -1,0 +1,5 @@
+name: ncf
+family: history_vector
+hidden_dim: 32      # factor_num: GMF width and tail of the MLP tower
+dropout: 0.5
+beta: 0.5           # negative-loss weight (sampled_pop_mse)

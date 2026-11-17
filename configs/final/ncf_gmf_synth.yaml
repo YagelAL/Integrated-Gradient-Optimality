@@ -1,0 +1,24 @@
+# @package _global_
+# Final-run config of the shipped checkpoint checkpoints/synthetic/ncf_gmf/final_ncf_gmf.pt.
+# Use with: scripts/train.py +final=ncf_gmf_synth  or  scripts/run_explainer_eval.py +final=ncf_gmf_synth
+defaults:
+  - override /dataset: synth
+  - override /recommender: ncf_gmf
+
+recommender:
+  hidden_dim: 32
+  dropout: 0.0
+  beta: 0.5
+
+trainer:
+  batch_size: 512
+  num_epochs: 13
+  optimizer:
+    lr: 0.003
+    weight_decay: 1.0e-4
+
+recommender_artifact:
+  local_path: checkpoints/synthetic/ncf_gmf/final_ncf_gmf.pt
+
+final_run: true
+wandb: null

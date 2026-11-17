@@ -1,0 +1,28 @@
+# @package _global_
+# Final-run config of the shipped checkpoint checkpoints/real/pinterest/final_ncf.pt.
+# Use with: scripts/train.py +final=ncf_pinterest  or  scripts/run_explainer_eval.py +final=ncf_pinterest
+defaults:
+  - override /dataset: pinterest
+  - override /recommender: ncf
+
+recommender:
+  hidden_dim: 64
+  dropout: 0.25795044759489044
+  beta: 0.5
+
+trainer:
+  batch_size: 128
+  num_epochs: 32
+  optimizer:
+    lr: 0.00010079646086076984
+    weight_decay: 0.00011378613786027492
+
+recommender_artifact:
+  local_path: checkpoints/real/pinterest/final_ncf.pt
+
+# NCF scores the whole catalog per user: memory O(B * V * M). The Table 4 values were produced with batch size 16.
+eval:
+  batch_size: 16
+
+final_run: true
+wandb: null

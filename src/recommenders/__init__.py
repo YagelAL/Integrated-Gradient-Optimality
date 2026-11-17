@@ -1,4 +1,4 @@
-"""Recommender registry; importing this package registers mlp and mlp_deep."""
+"""Recommender registry; importing this package registers mlp, mlp_deep, ncf and ncf_gmf."""
 
 from __future__ import annotations
 
