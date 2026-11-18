@@ -1,4 +1,4 @@
-"""Oracle-like row of the real-data tables: per-user floor of DEL@k_e (rank 0; mlp by default, ncf with --model=ncf).
+"""Oracle approximation row of the real-data tables: per-user floor of DEL@k_e (rank 0; mlp by default, ncf with --model=ncf).
 
 Per dataset and k_e, takes every run in the per-user CSV (IG, SpinRec for ncf, and the PLS
 searches; for mlp those of configs/budget/pls_oracle_<dataset>.yaml), keeps the runs that
@@ -30,5 +30,5 @@ for ds in ["ml1m", "pinterest", "yahoo"]:
         runs = [s for s in runs if len(s) == n]
         idx = runs[0].index
         floor = np.nanmin(np.vstack([s.reindex(idx).values for s in runs]), 0).mean()
-        rows.append(dict(dataset=ds, n_test_users=n, k_e=ke, **{"pls_only" if EXCL else "pls_oracle": round(float(floor), 4)}))
+        rows.append(dict(dataset=ds, n_test_users=n, k_e=ke, **{"pls_only" if EXCL else "oracle_approx": round(float(floor), 4)}))
 print(pd.DataFrame(rows).to_string(index=False))

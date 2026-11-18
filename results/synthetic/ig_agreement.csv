@@ -1,4 +1,4 @@
-model,metric,k,ig_overlap_pct,n
+model,metric,k,ig_agreement_pct,n
 mlp,del_ke,1,100.0,1600
 mlp,del_ke,2,100.0,1600
 mlp,del_ke,3,100.0,1600

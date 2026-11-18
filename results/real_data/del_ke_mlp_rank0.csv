@@ -1,4 +1,4 @@
-dataset,n_test_users,k_e,ig,spinrec_del_ke,pls_oracle
+dataset,n_test_users,k_e,ig,spinrec_del_ke,oracle_approx
 ml1m,1208,1,0.9920,0.9920,0.9920
 ml1m,1208,2,0.9841,0.9841,0.9841
 ml1m,1208,3,0.9762,0.9762,0.9762

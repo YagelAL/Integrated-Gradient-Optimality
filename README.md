@@ -1,4 +1,4 @@
-# Closed-Form Optimality of Integrated Gradients for Fidelity Score Metrics on Affine Recommenders
+# The Limits of Fidelity Optimization: Closed-Form Optimality for Affine Recommenders
 
 Code for the short paper. It contains an explainer-evaluation framework for recommender
 systems (recommenders, explainers, fidelity metrics) and the scripts for the short
@@ -13,8 +13,8 @@ paper's two experiments.
 | `scripts/` | Python entry points (`preprocess.py`, `run_sweep.py`, `train.py`, `run_explainer_eval.py`, `make_synth_data.py`, `synth_gt_audit.py`, `reproduce.py`) |
 | `checkpoints/` | The ten trained recommenders used in the short paper |
 | `experiments/synthetic/` | Table scripts for Experiment 1 |
-| `experiments/real_data/` | `floor_oracle.py`: oracle-like (`mlp`) and best-observed (`ncf`) row of the real-data tables |
-| `results/` | The short paper's table values as CSV, and the per-user DEL@k_e values the oracle-like and best-observed references are computed from |
+| `experiments/real_data/` | `floor_oracle.py`: oracle approximation row (`mlp` and `ncf`) of the real-data tables |
+| `results/` | The short paper's table values as CSV, and the per-user DEL@k_e values the oracle approximations are computed from |
 
 ## Setup
 
@@ -129,13 +129,13 @@ python experiments/synthetic/synth_match_table.py results/runs/synth/{mlp,mlp_de
 python experiments/synthetic/synth_regret_table.py results/runs/synth/{mlp,mlp_deep,ncf_gmf,ncf}/{del_ke,ins_ke}_oracle
 ```
 
-`synth_match_table.py` prints, per explainer and k, the mean item-level overlap x 100 of the
-explainer's top-k set with the model's optimal k-subset (`precision_model`: for `mlp`, the top-k of its
-closed-form effective item weights; for `mlp_deep`, `ncf` and `ncf_gmf`, which have no closed form, the exact pls set from the
-same pass). A user whose set reaches the exhaustive optimum's objective value (within 1e-6) counts as full agreement, since
-distinct sets can tie (not applied to the `pls` rows). The `ig` rows are Table 1 and are written to `results/synthetic/ig_overlap.csv`.
-Ties depend on float32 arithmetic, so another GPU or a CPU can move an entry in the last digit. The short paper's "99.6–100% exhaustive vs closed form" is the `pls` row of
-the `mlp` tables.
+`synth_match_table.py` prints, per explainer and k, the mean tie-aware agreement x 100 of the
+explainer's top-k set with the model's optimal k-subset: 100% if the set reaches the exhaustive optimum's objective value
+(within 1e-6), since distinct sets can tie (not applied to the `pls` rows); otherwise the item overlap (`precision_model`:
+for `mlp`, the top-k of its closed-form effective item weights; for `mlp_deep`, `ncf` and `ncf_gmf`, which have no closed
+form, the exact pls set from the same pass). The `ig` rows are Table 1 and are written to `results/synthetic/ig_agreement.csv`.
+Ties depend on float32 arithmetic, so another GPU or a CPU can move an entry in the last digit. The `pls` rows of
+the `mlp` tables compare the exhaustive set with the closed-form set.
 
 `synth_regret_table.py` prints the value regret of IG's set against the exhaustive optimum (DEL@k_e: `p(IG set) - p(optimal set)`;
 INS@k_e: the reverse; relative to the unperturbed probability; per k_e, no cummin) as mean, median, max, % of users with
@@ -146,7 +146,7 @@ exhaustive and the closed-form sets. It writes `results/synthetic/ig_regret.csv`
 
 5-core filtering, user-level `random_fraction` split (test 0.2, validation 0.1, seed 42). Yahoo!
 Music keeps ratings >= 70. Recommenders: `mlp` (Table 3) and `ncf` (Table 4). IG, SpinRec (`spinrec_del_ke`: SpinRec whose
-candidate selection optimizes DEL@k_e, 89 sampled baselines, 2 integration steps, seed 42) and the best-observed reference, DEL@k_e, rank 0, k_e = 1..5.
+candidate selection optimizes DEL@k_e, 89 sampled baselines, 2 integration steps, seed 42) and the oracle approximation, DEL@k_e, rank 0, k_e = 1..5.
 
 ```bash
 # 1. preprocess
@@ -166,7 +166,7 @@ for D in ml1m pinterest yahoo; do
       "fidelity.item_ranks=[0]" hydra.run.dir=results/runs/mlp_$D/q1000
 done
 
-# 4. Oracle-like row of Table 3
+# 4. Oracle approx. row of Table 3
 python experiments/real_data/floor_oracle.py
 
 # 5. PLS-only reference (the same floor without the IG runs)
@@ -185,14 +185,14 @@ for D in ml1m pinterest yahoo; do
   python scripts/run_explainer_eval.py +final=ncf_$D budget=q1000 "++active_explainer='ig,spinrec_del_ke'" \
       "fidelity.item_ranks=[0]" hydra.run.dir=results/runs/ncf_$D/q1000
 done
-python experiments/real_data/floor_oracle.py --model=ncf     # best-observed row of Table 4
+python experiments/real_data/floor_oracle.py --model=ncf     # oracle approx. row of Table 4
 ```
 
-The best-observed reference for NCF is the per-user best DEL@k_e over IG, SpinRec and PLS runs with larger budgets. It is
+The oracle approximation for NCF is the per-user best DEL@k_e over IG, SpinRec and PLS runs with larger budgets. It is
 not recomputed by the commands above: `results/real_data/per_user/<dataset>_ncf_del_ke_rank0.csv.gz` holds the per-user values of those runs
 (`ig` and `spinrec_del_ke` are the runs above; the other series, `pls_run01`, ..., are the PLS runs), and `floor_oracle.py --model=ncf` takes their per-user minimum.
 
-The oracle-like reference is a per-user floor: for each user, the best DEL@k_e over IG and the large-budget PLS
+The oracle approximation for `mlp` is a per-user floor: for each user, the best DEL@k_e over IG and the large-budget PLS
 searches. `results/real_data/per_user/` holds those per-user values (one series per run, named by its
 alias in `configs/budget/pls_oracle_<dataset>.yaml`); `floor_oracle.py` computes the floor from them. The default floor includes IG, so it is at most IG's value by construction; `--exclude-ig` gives the best of the PLS searches alone. Test users per dataset: 1,208 / 3,831 / 2,440.
 
@@ -200,10 +200,10 @@ alias in `configs/budget/pls_oracle_<dataset>.yaml`); `floor_oracle.py` computes
 
 | Table | Script | Values |
 |---|---|---|
-| 1. Synthetic: % overlap of IG with the exact optimum | `synth_gt_audit.py`, then `synth_match_table.py` | `results/synthetic/ig_overlap.csv` |
+| 1. Synthetic: tie-aware agreement (%) of IG with the exact optimum | `synth_gt_audit.py`, then `synth_match_table.py` | `results/synthetic/ig_agreement.csv` |
 | 2. Synthetic: regret of IG's set against the exact optimum | `synth_gt_audit.py`, then `synth_regret_table.py` | `results/synthetic/ig_regret.csv` |
-| 3. Real data, affine MLP: DEL@k_e, IG and SpinRec vs oracle-like | `run_explainer_eval.py` (IG, SpinRec), `floor_oracle.py` (oracle-like) | `results/real_data/del_ke_mlp_rank0.csv` |
-| 4. Real data, NCF: DEL@k_e, IG and SpinRec (DEL@k_e) vs best-observed | `run_explainer_eval.py` (IG, SpinRec), `floor_oracle.py --model=ncf` (best-observed) | `results/real_data/del_ke_ncf_rank0.csv` |
+| 3. Real data, affine MLP: DEL@k_e, IG and SpinRec vs oracle approx. | `run_explainer_eval.py` (IG, SpinRec), `floor_oracle.py` (oracle approx.) | `results/real_data/del_ke_mlp_rank0.csv` |
+| 4. Real data, NCF: DEL@k_e, IG and SpinRec (DEL@k_e) vs oracle approx. | `run_explainer_eval.py` (IG, SpinRec), `floor_oracle.py --model=ncf` (oracle approx.) | `results/real_data/del_ke_ncf_rank0.csv` |
 
 ## License
 

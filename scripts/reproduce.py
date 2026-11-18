@@ -84,7 +84,7 @@ def table2(train):
         run("scripts/run_explainer_eval.py", f"+final=mlp_{d}", "budget=q1000",
             "++active_explainer='ig,spinrec_del_ke'", "fidelity.item_ranks=[0]",
             f"hydra.run.dir=results/runs/mlp_{d}/q1000")
-    print("\n=== Table 3, oracle-like row")
+    print("\n=== Table 3, oracle approx. row")
     run("experiments/real_data/floor_oracle.py")
     print("\n=== Table 3, PLS-only (without IG)")
     run("experiments/real_data/floor_oracle.py", "--exclude-ig")
@@ -101,7 +101,7 @@ def real_ncf(train):
         run("scripts/run_explainer_eval.py", f"+final=ncf_{d}", "budget=q1000",
             "++active_explainer='ig,spinrec_del_ke'", "fidelity.item_ranks=[0]",
             f"hydra.run.dir=results/runs/ncf_{d}/q1000")
-    print("\n=== Table 4, best-observed row (fixed per-user values)")
+    print("\n=== Table 4, oracle approx. row (fixed per-user values)")
     run("experiments/real_data/floor_oracle.py", "--model=ncf")
 
 
